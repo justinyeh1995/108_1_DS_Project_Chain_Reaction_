@@ -280,14 +280,13 @@ int minimax(Board board, int depth, Player player, int alpha, int beta, bool isM
     // this_round_player
     Player* player_this_round = new Player(this_round);
     // problem 1
-    int score = evaluate(board, player);
-    if(isMax == false) { score *= -1;}
     // cout<<"score: "<<score<<endl;
     cout<<"depth: "<<depth<<endl;
     // Base condition: leaf node always set to max, which implies depth must be an odd number
     if(depth == 1) { 
-        if(isMax == false) { cout<<"Min is leaf node"<<endl;}
-        else{cout<<"Max is leaf node"<<endl;}
+        int score = evaluate(board, player);
+        if(isMax){cout<<"Max is leaf node"<<endl;}
+        else{ score *= -1; cout<<"Min is leaf node"<<endl;}
         cout<<"The score is: "<<score<<endl;   
         return score;
     }
@@ -295,7 +294,7 @@ int minimax(Board board, int depth, Player player, int alpha, int beta, bool isM
     //isMax : this_round is us while opponent_round is enemy
     if(isMax == true) {
         cout<<"isMax"<<endl;
-        if(score == 10000 ) { cout<<"isMax gonna win" <<endl; return score;}
+        //if(score == 10000 ) { cout<<"isMax gonna win" <<endl; return score;}
         int best = -INFINITY;
         for(int i = 0; i < ROW; i++) {
             for(int j = 0; j < COL; j++) {
@@ -319,7 +318,7 @@ int minimax(Board board, int depth, Player player, int alpha, int beta, bool isM
     // isMin
     else {
         cout<<"isMin"<<endl;
-        if(score == -10000) { cout<<"isMin gonna win" <<endl; return score;}
+        //if(score == -10000) { cout<<"isMin gonna win" <<endl; return score;}
         int best = INFINITY;
         for(int i = 0; i < ROW; i++) {
             for(int j = 0; j < COL; j++) {
