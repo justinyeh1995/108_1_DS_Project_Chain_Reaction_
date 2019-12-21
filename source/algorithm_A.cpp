@@ -3,7 +3,7 @@
 #include <time.h>
 #include "../include/algorithm.h"
 using namespace std;
-#define INFINITY 100000
+#define INFINITY 1000000
 
 
 /******************************************************
@@ -231,11 +231,11 @@ int evaluate(Board board, Player player) {
     score += my_count;
     // we win 
     if(enemy_count == 0 && my_count != 0){
-        return 10000;
+        return 100000;
     }
     // enemy has won last round board 
     if(enemy_count != 0 && my_count == 0){
-        return -10000;
+        return -100000;
     }
     int* chain = find_contiguous(board, player);
     for(int i = 0; i < ROW*COL; i++) {
@@ -268,20 +268,32 @@ int* all_possible_score(Board board, Player player) {
 
 
 
-int minimax(Board board, int depth, Player player, int alpha, int beta, bool isMax) {
+int minimax(Board board, int depth, Player player, Player opponent, int alpha, int beta, bool isMax) {
     // seperate our and oppponent's color 
-    char this_round = player.get_color();
-    char opponent_round;
-    if(this_round == 'r') { opponent_round= 'b'; }
-    else { opponent_round = 'r';}
+    char max_round = player.get_color();
+    char min_round = opponent.get_color();
+    // if(this_round == 'r') { opponent_round= 'b'; }
+    // else { opponent_round = 'r';}
     // this_round_player
-    Player* player_this_round = new Player(this_round);
+    Player* max_player= new Player(max_round);
+    Player* min_player= new Player(min_round);
+    //board.print_current_board(0, 0, -100);
     cout<<"depth: "<<depth<<endl;
+    int score = evaluate(board, player);
+    if(score == 100000) return score;
+    if(score == -100000) return score;
     // Base condition: leaf node always set to max, which implies depth must be an odd number
-    if(depth == 1) { 
-        int score = evaluate(board, player);
-        if(isMax){cout<<"Max is leaf node"<<endl;}
-        else{ score *= -1; cout<<"Min is leaf node"<<endl;}
+    if(depth == 3) { 
+        // int score = evaluate(board, player);
+        // int score;
+        // //if(isMax){
+        //     //cout<<"Max is leaf node"<<endl;
+        //     score = evaluate(board, player);
+        // }
+        // else{     
+        //     cout<<"Min is leaf node"<<endl;
+        //     score = evaluate(board, opponent);
+        // }
         cout<<"The score is: "<<score<<endl;   
         return score;
     }
@@ -293,42 +305,41 @@ int minimax(Board board, int depth, Player player, int alpha, int beta, bool isM
         for(int i = 0; i < ROW; i++) {
             for(int j = 0; j < COL; j++) {
                 // if cell can be placed by the player
-                if(board.get_cell_color(i,j) == this_round || board.get_cell_color(i,j) == 'w') {
+                if(board.get_cell_color(i,j) == max_round || board.get_cell_color(i,j) == 'w') {
+                    cout<<"\nIn [ "<<i<<" , "<<j<<" ]"<<endl;
                     Board board_copy = copy(board);
-                    board_copy.place_orb(i,j,player_this_round);
+                    // Problem not sure why
+                    board_copy.place_orb(i,j,max_player);
 
-                    Player next_round(opponent_round); 
-                    best = max(best, minimax(board_copy, depth+1, next_round, alpha, beta, false));
+                    //Player next_round(opponent_round); 
+                    best = max(best, minimax(board_copy, depth+1, player, opponent, alpha, beta, false));
                     alpha = max(alpha, best);    
                     if (beta <= alpha) 
                         break;  
                 }
             }
         }
-        //cout<<"Value returned by isMax: "<<best<<endl;
+        cout<<"Value returned by isMax: "<<best<<endl;
         return best;
     }
     // isMin
     else {
-        //cout<<"isMin"<<endl;
+        cout<<"isMin"<<endl;
         int best = INFINITY;
         for(int i = 0; i < ROW; i++) {
             for(int j = 0; j < COL; j++) {
                 // if cell can be placed by the player
-                if(board.get_cell_color(i,j) == this_round || board.get_cell_color(i,j) == 'w') {
+                if(board.get_cell_color(i,j) == min_round || board.get_cell_color(i,j) == 'w') {
                     cout<<"\nIn [ "<<i<<" , "<<j<<" ]"<<endl;
                     // cout<<"1"<<endl;
                     Board board_copy = copy(board);
-                    board_copy.print_current_board(i, j, -100);
+                    //board_copy.print_current_board(i, j, -100);
                     // cout<<"2"<<endl;
-                    board_copy.place_orb(i,j,player_this_round);
-                    board_copy.print_current_board(i, j, -100);
+                    board_copy.place_orb(i,j,min_player);
+                    //board_copy.print_current_board(i, j, -100);
                     // cout<<"3"<<endl;
-                    cout<<endl;
-                    
-                    Player next_round(opponent_round); 
-                    best = min(best, minimax(board_copy, depth+1, next_round, alpha, beta, true));
-                    //if(best == 10000) break;
+                    //Player next_round(opponent_round); 
+                    best = min(best, minimax(board_copy, depth+1, player, opponent, alpha, beta, true));
                     beta = min(beta, best);
                     if (beta <= alpha) 
                         break;   
@@ -346,6 +357,11 @@ Node find_best_move(Board board, Player player) {
     // player_me is the Maximum player
     char me = player.get_color();
     Player* player_me = new Player(me);
+    // create enemy for minimax
+    char enemy;
+    if(me == 'r') { enemy = 'b'; }
+    else { enemy = 'r';}
+    Player opponent(enemy); 
     // might cause violation
     int bestvalue = -INFINITY;
     Node best_move(-1,-1);
@@ -356,28 +372,24 @@ Node find_best_move(Board board, Player player) {
                 // use board_copy to avoid corrupting the current board
                 Board board_copy = copy(board);
                 // place the possible movement
-                cout<<"place in FindMax"<<endl;
+                cout<<"place in findMax"<<endl;
                 board_copy.place_orb(i,j,player_me);
                 // Emergency cut-off
-                if(evaluate(board_copy,player) == 10000) {
+                if(evaluate(board_copy,player) == 100000) {
                     cout<<"\nWin!"<<endl;
                     best_move.row = i;
                     best_move.col = j;
                     return best_move;
                 }
                 // only for better checking in the terminal
-                board_copy.print_current_board(i, j, -1);
-                // create enemy for minimax
-                char enemy;
-                if(me == 'r') { enemy = 'b'; }
-                else { enemy = 'r';}
-                Player opponent(enemy); 
+                //board_copy.print_current_board(i, j, -1);
+                
                 // operate minimax
                 int alpha = -INFINITY;
                 int beta =  INFINITY;
                 int depth = 0;
                 bool isMax = true;
-                int move = minimax(board_copy, depth, opponent, alpha, beta, false);
+                int move = minimax(board_copy, depth, player ,opponent, alpha, beta, false);
                 if(move > bestvalue) {
                     bestvalue = move;
                     best_move.row = i;
