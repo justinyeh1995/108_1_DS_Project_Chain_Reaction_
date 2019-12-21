@@ -294,17 +294,18 @@ Nodess** all_possible_scoress_next_depth(Board board, Player player, Player oppo
     char color;
     Nodess** res = new Nodess*[ROW*COL];
     
-    if(isMax) {
+    if(isMax == true) {
         color = player.get_color();
+        // cout<<"color: "<<color<<endl;
         for(int i = 0; i < ROW; i++) {
             for(int j = 0; j < COL; j++) {
                 res[i*COL+j]= new Nodess(i,j);
                 // if cell can be placed by the player
                 if(board.get_cell_color(i,j) == color || board.get_cell_color(i,j) == 'w') {
-                    //cout<<"place [ "<<i<<", "<<j<<" ]"<<endl;
+                    cout<<"Max player place [ "<<i<<", "<<j<<" ] "<<board.get_cell_color(i,j)<<endl;
                     Board board_copy = copyss(board);
                     board_copy.place_orb(i,j,max_player);
-                    res[i*COL+j]->value = evaluatess(board, player); 
+                    res[i*COL+j]->value = evaluatess(board_copy, player); 
                 }
             }
         }
@@ -317,9 +318,10 @@ Nodess** all_possible_scoress_next_depth(Board board, Player player, Player oppo
                 res[i*COL+j]= new Nodess(i,j);
                 // if cell can be placed by the player
                 if(board.get_cell_color(i,j) == color || board.get_cell_color(i,j) == 'w') {
+                    cout<<"Min player place [ "<<i<<", "<<j<<" ] "<<board.get_cell_color(i,j)<<endl;
                     Board board_copy = copyss(board);
                     board_copy.place_orb(i,j,min_player);
-                    res[i*COL+j]->value = evaluatess(board, player); 
+                    res[i*COL+j]->value = evaluatess(board_copy, player); 
                 }
             }
         }
@@ -344,10 +346,12 @@ int minimaxss(Board board, int depth, Player player,Player opponent, int alpha, 
         return -100000;
     }
     // problem 1
-    cout<<"depth: "<<depth<<endl;
+    //cout<<"depth: "<<depth<<endl;
     // Base condition: leaf node always set to max, which implies depth must be an odd number
+   // cout<<"value of isMax:"<< isMax <<endl;
+    //board.print_current_board(-1, -1, 0);
     Nodess** score_list = all_possible_scoress_next_depth(board, player, opponent, max_player, min_player, isMax);
-    cout<<"pass score_list"<<endl;
+     //cout<<"pass score_list"<<endl;
     //Nodess* node;
     // if(score_list[0]->value == 100000) {
     //     return 100000;
@@ -355,10 +359,11 @@ int minimaxss(Board board, int depth, Player player,Player opponent, int alpha, 
     // if(score_list[0]->value == -100000) {
     //     return -100000;
     // }
-    if(depth == 3) {          
+    //Problem 
+    if(depth == 0) {          
         Nodess* best = score_list[0];
         int best_score = best->value;
-        cout<<"The score is: "<<best_score<<" color: "<<board.get_cell_color(best->row,best->col)<<endl;   
+        cout<<" color: "<<board.get_cell_color(best->row,best->col)<<" At ["<<best->row<<", "<<best->col<<" ]"<<endl;   
         return best_score;
     }
     if(isMax == true) {
@@ -367,7 +372,7 @@ int minimaxss(Board board, int depth, Player player,Player opponent, int alpha, 
         for(int i = 0; i < ROW*COL; i++) {
             Board board_copy = copyss(board);
             board_copy.place_orb(score_list[i]->row,score_list[i]->col,max_player);
-            // Player next_round(opponent_round); 
+            cout<<board_copy.get_cell_color(score_list[i]->row,score_list[i]->col)<<endl;
                 
             best_max = max(best_max, minimaxss(board_copy, depth+1, player, opponent, alpha, beta, false));
             alpha = max(alpha, best_max);   
@@ -384,9 +389,10 @@ int minimaxss(Board board, int depth, Player player,Player opponent, int alpha, 
         for(int i = 0; i < ROW*COL; i++) {
             Board board_copy = copyss(board);
             board_copy.place_orb(score_list[i]->row,score_list[i]->col,min_player);
+            cout<<board_copy.get_cell_color(score_list[i]->row,score_list[i]->col)<<endl;
             //Player next_round(opponent_round); 
             best_min = min(best_min, minimaxss(board_copy, depth+1,  player, opponent, alpha, beta, true));
-            cout<<"best_min: "<<best_min<<endl;
+            //cout<<"best_min: "<<best_min<<endl;
             beta = min(beta, best_min);
             if (beta <= alpha) 
                 break; 
@@ -411,25 +417,24 @@ Nodess* find_best_movess(Board board, Player player) {
     Nodess* best_move =  new Nodess(-1,-1);
     // we operate minimax on each of the possible placement and return the best one (score wised) among them.
     Nodess** score_list = all_possible_scoress_next_depth(board, player, opponent, max_player, min_player, true);
-    
+    cout<<endl;
     for(int i = 0; i < ROW*COL; i++) {
         Board board_copy = copyss(board);
         board_copy.place_orb(score_list[i]->row,score_list[i]->col,max_player);
-        cout<<"\nIn [ "<<score_list[i]->row<<" , "<<score_list[i]->col<<" ]"<<endl;
+        cout<<board_copy.get_cell_color(score_list[i]->row, score_list[i]->col)<<endl;
         
-        if(score_list[i]->value  == 100000) {
-            cout<<"\nWin!"<<endl;
-            best_move->row = score_list[i]->row;
-            best_move->col = score_list[i]->col;
-            return best_move;
-        }
+        // if(score_list[i]->value  == 100000) {
+        //     cout<<"\nWin!"<<endl;
+        //     best_move->row = score_list[i]->row;
+        //     best_move->col = score_list[i]->col;
+        //     return best_move;
+        // }
         // create enemy for minimax
         
         // operate minimax
         int alpha = -INFINITY;
         int beta =  INFINITY;
         int init_depth = 0;
-        bool isMax = true;
 
         int move = minimaxss(board_copy, init_depth, player, opponent, alpha, beta, false);
         if(move > bestvalue) {
@@ -440,6 +445,7 @@ Nodess* find_best_movess(Board board, Player player) {
             best_move->col = score_list[i]->col;
         }
     }
+    cout<<"This is "<<player.get_color()<<" round"<<endl;
     cout<<"Return the best move: [ "<<best_move->row<<", "<<best_move->col<<" ] and the corresponding best value is: "<<bestvalue<<" cell color: "<<board.get_cell_color(best_move->row,best_move->col)<<endl;
     cout<<endl;
     return best_move;
@@ -449,19 +455,19 @@ void algorithm_C(Board board, Player player, int index[]){
 
     // we are the first one; first step get corner
     int count = 0;
-    for(int i = 0; i < ROW; i++) {
-        for(int j = 0; j < COL; j++) {
-            count += board.get_orbs_num(i,j);
-        }
-    }
-    if(count == 0) {
-        index[0] = 0;
-        index[1] = 0;
-    }
+    // for(int i = 0; i < ROW; i++) {
+    //     for(int j = 0; j < COL; j++) {
+    //         count += board.get_orbs_num(i,j);
+    //     }
+    // }
+    // if(count == 0) {
+    //     index[0] = 0;
+    //     index[1] = 0;
+    // }
     // other than the first step
-    else {
+    // else {
         Nodess* best = find_best_movess(board, player);
         index[0] = best->row;
         index[1] = best->col;
-    }
+    //}
 }
