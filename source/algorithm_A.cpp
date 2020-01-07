@@ -218,7 +218,7 @@ int position_aug(Board board, int i, int j, Player player) {
     }
     //about to explode
     if(is_critical(board, i, j)) {
-        aug += 3;
+        aug *= 2;
     }
     return aug;
 }
