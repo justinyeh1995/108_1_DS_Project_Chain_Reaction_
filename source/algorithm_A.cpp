@@ -4,6 +4,8 @@
 #include "../include/algorithm.h"
 using namespace std;
 #define INFINITY 1000000
+#define WIN 100000
+#define LOSE -WIN
 
 
 /******************************************************
@@ -151,6 +153,7 @@ int* find_contiguous(Board board, Player player) {
                 int l = 0;
                 Node node(i,j);
                 stack<Node> s;
+                // bfs search
                 while(!s.empty()) {
                     Node pos = s.top();
                     int x = pos.row;
@@ -181,6 +184,44 @@ int* find_contiguous(Board board, Player player) {
     }
     return chain;
 }
+
+int neighbor_evaluate(Board board, int i, int j, Player player) {
+    int adj_val = 0;
+    if( i-1 >= 0 && is_enemy(board, i-1, j, player) && is_critical(board,i-1, j)) {
+        adj_val+= 5 -board.get_capacity(i-1,j);
+    }
+    if(i+1 <= 4 && is_enemy(board, i+1, j, player) && is_critical(board, i+1, j)) {
+        adj_val += 5 -board.get_capacity(i+1,j);  
+    }
+    if( j-1 >= 0 && is_enemy(board, i, j-1, player) && is_critical(board, i, j-1)) {
+        adj_val += 5 -board.get_capacity(i,j-1); 
+    }
+    if(j+1 <= 5 && is_enemy(board, i, j+1, player) && is_critical(board, i, j+1)) {
+        adj_val += 5 -board.get_capacity(i,j+1); 
+    }
+    return adj_val;
+}
+
+int position_aug(Board board, int i, int j, Player player) {
+    int aug = 0;
+    //corner
+    if(board.get_capacity(i,j) == 2) {
+        aug = 4;
+    }
+    //line
+    else if(board.get_capacity(i,j) == 3) {
+        aug = 3;
+    }
+    //middle
+    else if(board.get_capacity(i,j) == 4) {
+        aug = 1;
+    }
+    //about to explode
+    if(is_critical(board, i, j)) {
+        aug += 3;
+    }
+    return aug;
+}
 // Need to be accurate :((
 int evaluate(Board board, Player player) {
     int score;
@@ -188,38 +229,14 @@ int evaluate(Board board, Player player) {
     int enemy_count = 0;
     for(int i = 0; i < ROW; i++) {
         for(int j = 0; j < COL; j++) {
-            // if cell can be placed by the player
+            // if the cell is me
             if(board.get_cell_color(i,j) == player.get_color()) {
                 my_count += board.get_orbs_num(i,j);
-                bool isVulnerable = false;
-                if( i-1 >= 0 && is_enemy(board, i-1, j, player) && is_critical(board,i-1, j)) {
-                    score += 5 -board.get_capacity(i-1,j);
-                    bool isVulnerable = true;
-                }
-                if(i+1 <= 4 && is_enemy(board, i+1, j, player) && is_critical(board, i+1, j)) {
-                    score += 5 -board.get_capacity(i+1,j);
-                    bool isVulnerable = true;
-                }
-                if( j-1 >= 0 && is_enemy(board, i, j-1, player) && is_critical(board, i, j-1)) {
-                    score += 5 -board.get_capacity(i,j-1);
-                    bool isVulnerable = true;
-                }
-                if(j+1 <= 5 && is_enemy(board, i, j+1, player) && is_critical(board, i, j+1)) {
-                    score += 5 -board.get_capacity(i,j+1);
-                    bool isVulnerable = true;
-                }
-                //
-                if(!isVulnerable){
-                    if(board.get_capacity(i,j) == 3) {
-                        score += 2;
-                    }
-                    else if(board.get_capacity(i,j) == 2) {
-                        score += 3;
-                    }
-                    if(is_critical(board, i, j)) {
-                        score += 2;
-                    }
-                }
+                // fix 
+                //bool isVulnerable = false;
+                score += neighbor_evaluate(board, i, j, player);
+                // corner or not, line or not 
+                score += position_aug(board, i, j, player);
             }
             //enemy
             else {
@@ -227,18 +244,13 @@ int evaluate(Board board, Player player) {
             }
         }
     }
-    // start fixing here
-    /*
-    if board is full 
-        then start a new scenario
-
-    */
-    score += my_count;
+    int count_differ = my_count - enemy_count;
+    score += count_differ;
     // we win 
     if(enemy_count == 0 && my_count != 0){
         return 100000;
     }
-    // enemy has won last round board 
+    // enemy has won  
     if(enemy_count != 0 && my_count == 0){
         return -100000;
     }
@@ -252,6 +264,30 @@ int evaluate(Board board, Player player) {
     return score;
 }
 
+int Max(int a, int b) {
+    int max;
+    if(a > b)
+        max = a;
+    else 
+        max = b;
+    return max;
+}
+int Min(int a, int b) {
+    int min;
+    if(a < b)
+        min = a;
+    else 
+        min = b;
+    return min;
+}
+
+bool cutoff(int evaluate) {
+    if(evaluate == WIN || evaluate == LOSE) {
+       return true;  
+    }
+    return false;
+}
+
 int minimax(Board board, int depth, Player player, Player opponent, int alpha, int beta, bool isMax) {
     // seperate our and oppponent's color 
     char max_round = player.get_color();
@@ -260,10 +296,12 @@ int minimax(Board board, int depth, Player player, Player opponent, int alpha, i
     Player* max_player= new Player(max_round);
     Player* min_player= new Player(min_round);
     //board.print_current_board(0, 0, -100);
-    //cout<<"depth: "<<depth<<endl;
+    
     int score = evaluate(board, player);
-    if(score == 100000) return score;
-    if(score == -100000) return score;
+    // helper function to determine whether the current tree level has an result
+    // placing orbs after an result will trigger the explode function without an end
+    if(cutoff(score)) return score;
+    
     // Base condition: leaf node always set to max, which implies depth must be an odd number
     if(depth == 3) { 
         //cout<<"The score is: "<<score<<endl;   
@@ -283,14 +321,14 @@ int minimax(Board board, int depth, Player player, Player opponent, int alpha, i
                     // Problem not sure why
                     board_copy.place_orb(i,j,max_player);
  
-                    //best = max(best, minimax(board_copy, depth+1, player, opponent, alpha, beta, false));
+                    //best = Max(best, minimax(board_copy, depth+1, player, opponent, alpha, beta, false));
                     if(minimax(board_copy, depth+1, player, opponent, alpha, beta, false) > best ) {
                         best = minimax(board_copy, depth+1, player, opponent, alpha, beta, false); 
                     }
-                    //alpha = max(alpha, best); 
+                    //alpha = Max(alpha, best);    
                     if(best > alpha) {
                         alpha = best;
-                    }   
+                    } 
                     if (beta <= alpha) 
                         break;  
                 }
@@ -310,12 +348,12 @@ int minimax(Board board, int depth, Player player, Player opponent, int alpha, i
                     //cout<<"\nIn [ "<<i<<" , "<<j<<" ]"<<endl;
                     Board board_copy = copy(board);
                     board_copy.place_orb(i,j,min_player);
-            
-                    //best = min(best, minimax(board_copy, depth+1, player, opponent, alpha, beta, true));
+                    
+                    //best = Min(best, minimax(board_copy, depth+1, player, opponent, alpha, beta, true));
                     if(minimax(board_copy, depth+1, player, opponent, alpha, beta, true) < best ) {
                         best = minimax(board_copy, depth+1, player, opponent, alpha, beta, true);
                     }
-                    //beta = min(beta, best);
+                    //beta = Min(beta, best);
                     if(best < beta) {
                         beta = best;
                     }  
@@ -359,7 +397,7 @@ Node find_best_move(Board board, Player player) {
                 //     best_move.col = j;
                 //     return best_move;
                 // }
-            
+                
                 // operate minimax
                 int alpha = -INFINITY;
                 int beta =  INFINITY;
