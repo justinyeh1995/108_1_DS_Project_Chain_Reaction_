@@ -137,7 +137,8 @@ int* find_contiguous(Board board, Player player) {
     for(int i = 0; i < ROW; i++) {
         for(int j = 0; j < COL; j++) {
             table[i][j] = false;
-            if(is_critical(board,i,j)) {
+            // board.get_cell_color(i,j) == player.get_color() 
+            if(board.get_cell_color(i,j) == player.get_color()  && is_critical(board,i,j)) {
                 table[i][j] = true;
             }   
         }
@@ -188,16 +189,16 @@ int* find_contiguous(Board board, Player player) {
 int neighbor_evaluate(Board board, int i, int j, Player player) {
     int adj_val = 0;
     if( i-1 >= 0 && is_enemy(board, i-1, j, player) && is_critical(board,i-1, j)) {
-        adj_val+= 5 -board.get_capacity(i-1,j);
+        adj_val = adj_val - (5 -board.get_capacity(i-1,j)) + ( board.get_capacity(i-1,j) - board.get_orbs_num(i-1,j) );
     }
     if(i+1 <= 4 && is_enemy(board, i+1, j, player) && is_critical(board, i+1, j)) {
-        adj_val += 5 -board.get_capacity(i+1,j);  
+        adj_val = adj_val - (5 -board.get_capacity(i+1,j)) + ( board.get_capacity(i+1,j) - board.get_orbs_num(i+1,j) );  
     }
     if( j-1 >= 0 && is_enemy(board, i, j-1, player) && is_critical(board, i, j-1)) {
-        adj_val += 5 -board.get_capacity(i,j-1); 
+        adj_val = adj_val - (5 -board.get_capacity(i,j-1)) + ( board.get_capacity(i,j-1) - board.get_orbs_num(i,j-1) );  
     }
     if(j+1 <= 5 && is_enemy(board, i, j+1, player) && is_critical(board, i, j+1)) {
-        adj_val += 5 -board.get_capacity(i,j+1); 
+        adj_val = adj_val - (5 -board.get_capacity(i,j+1)) + ( board.get_capacity(i,j+1) - board.get_orbs_num(i,j+1) ); 
     }
     return adj_val;
 }
@@ -218,7 +219,7 @@ int position_aug(Board board, int i, int j, Player player) {
     }
     //about to explode
     if(is_critical(board, i, j)) {
-        aug *= 2;
+        aug += 3;
     }
     return aug;
 }
@@ -227,13 +228,12 @@ int evaluate(Board board, Player player) {
     int score;
     int my_count = 0;
     int enemy_count = 0;
+    // Parameter 1
     for(int i = 0; i < ROW; i++) {
         for(int j = 0; j < COL; j++) {
             // if the cell is me
             if(board.get_cell_color(i,j) == player.get_color()) {
                 my_count += board.get_orbs_num(i,j);
-                // fix 
-                //bool isVulnerable = false;
                 score += neighbor_evaluate(board, i, j, player);
                 // corner or not, line or not 
                 score += position_aug(board, i, j, player);
@@ -244,8 +244,9 @@ int evaluate(Board board, Player player) {
             }
         }
     }
+    // Parameter 2
     int count_differ = my_count - enemy_count;
-    score += count_differ;
+    score += 2*count_differ;
     // we win 
     if(enemy_count == 0 && my_count != 0){
         return 100000;
@@ -254,6 +255,7 @@ int evaluate(Board board, Player player) {
     if(enemy_count != 0 && my_count == 0){
         return -100000;
     }
+    // Parameter 3
     int* chain = find_contiguous(board, player);
     for(int i = 0; i < ROW*COL; i++) {
         if(chain[i] > 1) {
@@ -264,22 +266,6 @@ int evaluate(Board board, Player player) {
     return score;
 }
 
-int Max(int a, int b) {
-    int max;
-    if(a > b)
-        max = a;
-    else 
-        max = b;
-    return max;
-}
-int Min(int a, int b) {
-    int min;
-    if(a < b)
-        min = a;
-    else 
-        min = b;
-    return min;
-}
 
 bool cutoff(int evaluate) {
     if(evaluate == WIN || evaluate == LOSE) {
@@ -300,13 +286,13 @@ int minimax(Board board, int depth, Player player, Player opponent, int alpha, i
     int score = evaluate(board, player);
     // helper function to determine whether the current tree level has an result
     // placing orbs after an result will trigger the explode function without an end
-    if(cutoff(score)) return score;
+    if(cutoff(score) || depth == 3) return score;
     
     // Base condition: leaf node always set to max, which implies depth must be an odd number
-    if(depth == 3) { 
-        //cout<<"The score is: "<<score<<endl;   
-        return score;
-    }
+    // if(depth == 3) { 
+    //     //cout<<"The score is: "<<score<<endl;   
+    //     return score;
+    // }
 
     //isMax : this_round is us while opponent_round is enemy
     if(isMax == true) {
