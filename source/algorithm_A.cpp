@@ -262,7 +262,6 @@ int evaluate(Board board, Player player) {
             score += 2*chain[i]; 
         }
     }
-    //cout<<"This round player is "<<player.get_color()<<endl;
     return score;
 }
 
@@ -287,31 +286,20 @@ int minimax(Board board, int depth, Player player, Player opponent, int alpha, i
     // helper function to determine whether the current tree level has an result
     // placing orbs after an result will trigger the explode function without an end
     if(cutoff(score) || depth == 3) return score;
-    
-    // Base condition: leaf node always set to max, which implies depth must be an odd number
-    // if(depth == 3) { 
-    //     //cout<<"The score is: "<<score<<endl;   
-    //     return score;
-    // }
 
     //isMax : this_round is us while opponent_round is enemy
     if(isMax == true) {
-        //cout<<"isMax"<<endl;
         int best = -INFINITY;
         for(int i = 0; i < ROW; i++) {
             for(int j = 0; j < COL; j++) {
                 // if cell can be placed by the player
                 if(board.get_cell_color(i,j) == max_round || board.get_cell_color(i,j) == 'w') {
-                    //cout<<"\nIn [ "<<i<<" , "<<j<<" ]"<<endl;
                     Board board_copy = copy(board);
-                    // Problem not sure why
                     board_copy.place_orb(i,j,max_player);
  
-                    //best = Max(best, minimax(board_copy, depth+1, player, opponent, alpha, beta, false));
                     if(minimax(board_copy, depth+1, player, opponent, alpha, beta, false) > best ) {
                         best = minimax(board_copy, depth+1, player, opponent, alpha, beta, false); 
-                    }
-                    //alpha = Max(alpha, best);    
+                    }   
                     if(best > alpha) {
                         alpha = best;
                     } 
@@ -320,26 +308,21 @@ int minimax(Board board, int depth, Player player, Player opponent, int alpha, i
                 }
             }
         }
-        //cout<<"Value returned by isMax: "<<best<<endl;
         return best;
     }
     // isMin
     else {
-        //cout<<"isMin"<<endl;
         int best = INFINITY;
         for(int i = 0; i < ROW; i++) {
             for(int j = 0; j < COL; j++) {
                 // if cell can be placed by the player
                 if(board.get_cell_color(i,j) == min_round || board.get_cell_color(i,j) == 'w') {
-                    //cout<<"\nIn [ "<<i<<" , "<<j<<" ]"<<endl;
                     Board board_copy = copy(board);
                     board_copy.place_orb(i,j,min_player);
                     
-                    //best = Min(best, minimax(board_copy, depth+1, player, opponent, alpha, beta, true));
                     if(minimax(board_copy, depth+1, player, opponent, alpha, beta, true) < best ) {
                         best = minimax(board_copy, depth+1, player, opponent, alpha, beta, true);
                     }
-                    //beta = Min(beta, best);
                     if(best < beta) {
                         beta = best;
                     }  
@@ -348,7 +331,6 @@ int minimax(Board board, int depth, Player player, Player opponent, int alpha, i
                 }
             }
         }
-        //cout<<"Value returned by isMin: "<<best<<endl;
         return best;
     }
     // Error occurs
@@ -373,16 +355,7 @@ Node find_best_move(Board board, Player player) {
             if(board.get_cell_color(i,j) == me || board.get_cell_color(i,j) == 'w'){
                 // use board_copy to avoid corrupting the current board
                 Board board_copy = copy(board);
-                // place the possible movement
-                //cout<<"place in findMax"<<endl;
                 board_copy.place_orb(i,j,player_me);
-                // Emergency cut-off
-                // if(evaluate(board_copy,player) == 100000) {
-                //     cout<<"\nWin!"<<endl;
-                //     best_move.row = i;
-                //     best_move.col = j;
-                //     return best_move;
-                // }
                 
                 // operate minimax
                 int alpha = -INFINITY;
@@ -398,8 +371,6 @@ Node find_best_move(Board board, Player player) {
             }
         }
     }
-    //cout<<"Return the best move: [ "<<best_move.row<<", "<<best_move.col<<" ] and the corresponding best value is: "<<bestvalue<<endl;
-    //cout<<endl;
     return best_move;
 }
 
