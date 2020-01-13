@@ -129,7 +129,7 @@ bool is_enemy(Board board,int i, int j, Player player) {
 }
 
 bool is_critical(Board board,int i, int j) {
-    return board.get_orbs_num(i,j) == board.get_capacity(i,j)-1;
+    return board.get_orbs_num(i,j) == (board.get_capacity(i,j)-1);
 }
 
 int* find_contiguous(Board board, Player player) {
@@ -137,7 +137,6 @@ int* find_contiguous(Board board, Player player) {
     for(int i = 0; i < ROW; i++) {
         for(int j = 0; j < COL; j++) {
             table[i][j] = false;
-            // board.get_cell_color(i,j) == player.get_color() 
             if(board.get_cell_color(i,j) == player.get_color()  && is_critical(board,i,j)) {
                 table[i][j] = true;
             }   
@@ -186,6 +185,23 @@ int* find_contiguous(Board board, Player player) {
     return chain;
 }
 
+// int neighbor_evaluate(Board board, int i, int j, Player player) {
+//     int adj_val = 0;
+//     if( i-1 >= 0 && is_enemy(board, i-1, j, player) && is_critical(board,i-1, j)) {
+//         adj_val = adj_val - (5 -board.get_capacity(i-1,j)) ;
+//     }
+//     if(i+1 <= 4 && is_enemy(board, i+1, j, player) && is_critical(board, i+1, j)) {
+//         adj_val = adj_val - (5 -board.get_capacity(i+1,j)) ;  
+//     }
+//     if( j-1 >= 0 && is_enemy(board, i, j-1, player) && is_critical(board, i, j-1)) {
+//         adj_val = adj_val - (5 -board.get_capacity(i,j-1)) ;  
+//     }
+//     if(j+1 <= 5 && is_enemy(board, i, j+1, player) && is_critical(board, i, j+1)) {
+//         adj_val = adj_val - (5 -board.get_capacity(i,j+1)); 
+//     }
+//     return adj_val;
+// }
+
 int neighbor_evaluate(Board board, int i, int j, Player player) {
     int adj_val = 0;
     if( i-1 >= 0 && is_enemy(board, i-1, j, player) && is_critical(board,i-1, j)) {
@@ -208,6 +224,7 @@ int position_aug(Board board, int i, int j, Player player) {
     //corner
     if(board.get_capacity(i,j) == 2) {
         aug = 4;
+
     }
     //line
     else if(board.get_capacity(i,j) == 3) {
@@ -220,12 +237,14 @@ int position_aug(Board board, int i, int j, Player player) {
     //about to explode
     if(is_critical(board, i, j)) {
         aug += 3;
+        //cout<<"[ "<<i<<", "<<j<<"]"<<endl;
     }
+    
     return aug;
 }
 // Need to be accurate :((
 int evaluate(Board board, Player player) {
-    int score;
+    int score =0;
     int my_count = 0;
     int enemy_count = 0;
     // Parameter 1
@@ -234,9 +253,10 @@ int evaluate(Board board, Player player) {
             // if the cell is me
             if(board.get_cell_color(i,j) == player.get_color()) {
                 my_count += board.get_orbs_num(i,j);
-                score += neighbor_evaluate(board, i, j, player);
+                int neighbor = neighbor_evaluate(board, i, j, player);
+                score += neighbor;
                 // corner or not, line or not 
-                score += position_aug(board, i, j, player);
+                if(neighbor == 0) score += position_aug(board, i, j, player);
             }
             //enemy
             else {
@@ -280,9 +300,9 @@ int minimax(Board board, int depth, Player player, Player opponent, int alpha, i
     
     Player* max_player= new Player(max_round);
     Player* min_player= new Player(min_round);
-    //board.print_current_board(0, 0, -100);
     
     int score = evaluate(board, player);
+    // cout<<"The score is: "<<score<<endl;   
     // helper function to determine whether the current tree level has an result
     // placing orbs after an result will trigger the explode function without an end
     if(cutoff(score) || depth == 3) return score;
@@ -371,6 +391,7 @@ Node find_best_move(Board board, Player player) {
             }
         }
     }
+    //cout<<"best move: [ "<<best_move.row<<", "<<best_move.col<<" ] and the best value is: "<<bestvalue<<endl;
     return best_move;
 }
 
@@ -388,6 +409,7 @@ void algorithm_A(Board board, Player player, int index[]){
         index[0] = 0;
         index[1] = 0;
     }
+    
     // other than the first step
     else {
         Node best = find_best_move(board, player);
