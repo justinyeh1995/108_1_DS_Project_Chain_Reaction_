@@ -232,7 +232,7 @@ int position_aug(Board board, int i, int j, Player player) {
     }
     //middle
     else if(board.get_capacity(i,j) == 4) {
-        aug = 1;
+        aug = 0;
     }
     //about to explode
     if(is_critical(board, i, j)) {
