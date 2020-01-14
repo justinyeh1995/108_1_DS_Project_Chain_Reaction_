@@ -7,7 +7,6 @@ using namespace std;
 #define WIN 100000
 #define LOSE -WIN
 
-
 /******************************************************
  * In your algorithm, you can just use the the funcitons
  * listed by TA to get the board information.(functions 
@@ -185,23 +184,6 @@ int* find_contiguous(Board board, Player player) {
     return chain;
 }
 
-// int neighbor_evaluate(Board board, int i, int j, Player player) {
-//     int adj_val = 0;
-//     if( i-1 >= 0 && is_enemy(board, i-1, j, player) && is_critical(board,i-1, j)) {
-//         adj_val = adj_val - (5 -board.get_capacity(i-1,j)) ;
-//     }
-//     if(i+1 <= 4 && is_enemy(board, i+1, j, player) && is_critical(board, i+1, j)) {
-//         adj_val = adj_val - (5 -board.get_capacity(i+1,j)) ;  
-//     }
-//     if( j-1 >= 0 && is_enemy(board, i, j-1, player) && is_critical(board, i, j-1)) {
-//         adj_val = adj_val - (5 -board.get_capacity(i,j-1)) ;  
-//     }
-//     if(j+1 <= 5 && is_enemy(board, i, j+1, player) && is_critical(board, i, j+1)) {
-//         adj_val = adj_val - (5 -board.get_capacity(i,j+1)); 
-//     }
-//     return adj_val;
-// }
-
 int neighbor_evaluate(Board board, int i, int j, Player player) {
     int adj_val = 0;
     if( i-1 >= 0 && is_enemy(board, i-1, j, player) && is_critical(board,i-1, j)) {
@@ -224,7 +206,6 @@ int position_aug(Board board, int i, int j, Player player) {
     //corner
     if(board.get_capacity(i,j) == 2) {
         aug = 4;
-
     }
     //line
     else if(board.get_capacity(i,j) == 3) {
@@ -237,11 +218,10 @@ int position_aug(Board board, int i, int j, Player player) {
     //about to explode
     if(is_critical(board, i, j)) {
         aug += 3;
-        //cout<<"[ "<<i<<", "<<j<<"]"<<endl;
     }
-    
     return aug;
 }
+
 // Need to be accurate :((
 int evaluate(Board board, Player player) {
     int score =0;
@@ -264,17 +244,17 @@ int evaluate(Board board, Player player) {
             }
         }
     }
-    // Parameter 2
-    int count_differ = my_count - enemy_count;
-    score += 2*count_differ;
-    // we win 
+    // check if someone wins
     if(enemy_count == 0 && my_count != 0){
         return 100000;
-    }
-    // enemy has won  
+    } 
     if(enemy_count != 0 && my_count == 0){
         return -100000;
     }
+    // if no one wins
+    // Parameter 2
+    int count_differ = my_count - enemy_count;
+    score += 2*count_differ;
     // Parameter 3
     int* chain = find_contiguous(board, player);
     for(int i = 0; i < ROW*COL; i++) {
@@ -284,7 +264,6 @@ int evaluate(Board board, Player player) {
     }
     return score;
 }
-
 
 bool cutoff(int evaluate) {
     if(evaluate == WIN || evaluate == LOSE) {
@@ -301,10 +280,8 @@ int minimax(Board board, int depth, Player player, Player opponent, int alpha, i
     Player* max_player= new Player(max_round);
     Player* min_player= new Player(min_round);
     
-    int score = evaluate(board, player);
-    // cout<<"The score is: "<<score<<endl;   
-    // helper function to determine whether the current tree level has an result
-    // placing orbs after an result will trigger the explode function without an end
+    int score = evaluate(board, player);   
+    // terminal state
     if(cutoff(score) || depth == 3) return score;
 
     //isMax : this_round is us while opponent_round is enemy
@@ -375,8 +352,7 @@ Node find_best_move(Board board, Player player) {
             if(board.get_cell_color(i,j) == me || board.get_cell_color(i,j) == 'w'){
                 // use board_copy to avoid corrupting the current board
                 Board board_copy = copy(board);
-                board_copy.place_orb(i,j,player_me);
-                
+                board_copy.place_orb(i,j,player_me);            
                 // operate minimax
                 int alpha = -INFINITY;
                 int beta =  INFINITY;
@@ -397,7 +373,6 @@ Node find_best_move(Board board, Player player) {
 
 
 void algorithm_A(Board board, Player player, int index[]){
-
     // we are the first one; first step get corner
     int count = 0;
     for(int i = 0; i < ROW; i++) {
@@ -408,8 +383,7 @@ void algorithm_A(Board board, Player player, int index[]){
     if(count == 0) {
         index[0] = 0;
         index[1] = 0;
-    }
-    
+    }    
     // other than the first step
     else {
         Node best = find_best_move(board, player);
