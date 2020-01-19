@@ -2,7 +2,7 @@
 
 ##Compile Command:
 
-- $g++ chain_reaction.cpp board.cpp rules.cpp player.cpp algorithm_A.cpp algorithm_TA.cpp
+- g++ chain_reaction.cpp board.cpp rules.cpp player.cpp algorithm_A.cpp algorithm_TA.cpp
 
 ##Execution:
 
