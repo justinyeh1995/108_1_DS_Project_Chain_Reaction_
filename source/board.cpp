@@ -62,15 +62,15 @@ Board::Board(){
 
 }
 
-void Board::print_current_board(int i, int j, int round){
+void Board::print_current_board(int x, int y, int round){
 
     int orb_num;
     char symbol;
 
     ////// Print out the current state of the board //////
-    //system(CLEAR);
+    system(CLEAR);
     cout << "Round: " << round << endl;
-    cout << "Place orb on (" << i << ", " << j << ")" << endl;
+    cout << "Place orb on (" << x << ", " << y << ")" << endl;
     cout << "=========================================" << endl;
     for(int i = 0; i < ROW; i++){
         for(int j = 0; j < COL; j++){
@@ -112,7 +112,7 @@ void Board::print_current_board(int i, int j, int round){
 
 bool Board::place_orb(int i, int j, Player * player){
     
-    if(index_range_illegal(i, j) || !placement_illegal(*player, cells[i][j])){
+    if(!index_range_illegal(i, j) || !placement_illegal(*player, cells[i][j])){
         int temp = cells[i][j].get_orbs_num();
         temp += 1;
         cells[i][j].set_orbs_num(temp);
@@ -128,7 +128,6 @@ bool Board::place_orb(int i, int j, Player * player){
         cell_reaction_marker();
         cell_chain_reaction(*player);
     }
-
     return true;
 }
 
@@ -203,8 +202,8 @@ void Board::cell_chain_reaction(Player player){
                 }
             }
         }
-
         if(win_the_game(player)){
+            
             return;
         }
 

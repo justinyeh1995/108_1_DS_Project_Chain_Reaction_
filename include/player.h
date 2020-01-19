@@ -14,7 +14,7 @@ class Player{
         bool illegal;   // If yes, terminate the program and determine the playerwho violates the rules to be a loser
 
     public:
-        Player(int col);
+        Player(char col);
 
         // The basic functons of Player
         char get_color();
